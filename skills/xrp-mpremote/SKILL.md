@@ -250,12 +250,53 @@ Chain commands with `+` to avoid repeated soft resets between operations.
 
 ---
 
+## Gotchas
+
+### Never background mpremote with `&`
+Even with `--no-follow`, the process holds the USB serial port open. Every subsequent mpremote command will fail with `no device found` until you `pkill -f mpremote`. Always run mpremote commands sequentially and let them finish.
+
+### `connect list` showing a device ≠ port is free
+Another mpremote process can hold the port while the device still appears in the list. Verify with a quick `mpremote exec "print('ok')"` before assuming it's usable.
+
+### Don't run a blocking web server via `mpremote run` to test things
+If the script starts an async event loop (e.g. `server.run()`), it will hang forever and you'll have to kill the process. Instead, `exec` the specific logic you want to test inline:
+
+```bash
+# Bad — hangs forever
+mpremote run web_server.py
+
+# Good — test just the boot init logic
+mpremote exec "import json; ..."
+```
+
+### Chain file copies with `+` to avoid repeated soft resets
+```bash
+# Bad — two soft resets, two reconnects
+mpremote fs cp file1.py :file1.py
+mpremote fs cp file2.py :file2.py
+
+# Good — one invocation, one reset
+mpremote fs cp file1.py :file1.py + fs cp file2.py :file2.py
+```
+
+### Use `resume exec` to preserve state across multiple commands
+`exec` and `run` each trigger a soft reset, wiping any state you set up. Use `resume` to skip the reset and chain setup → test → verify steps:
+
+```bash
+mpremote exec "x = 42" + resume exec "print(x)"  # works
+mpremote exec "x = 42"
+mpremote exec "print(x)"  # NameError — x was wiped by soft reset
+```
+
+---
+
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `no device found` | Board not connected or in bootloader mode | Check USB cable, replug, check `mpremote connect list` |
+| `no device found` | Board not connected, in bootloader mode, or another mpremote process holds the port | Check USB cable, replug, `pkill -f mpremote`, then retry |
 | `OSError: [Errno 16] EBUSY` | Another program (Thonny, serial monitor) has the port open | Close the other program |
+| `no device found` after backgrounding mpremote | `mpremote ... &` held the port | `pkill -f mpremote`, wait a moment, retry |
 | Import errors after `mount` | Board can't find modules in mounted dir | Ensure you're mounting the correct directory; check `sys.path` |
 | Script works with `run` but fails after `fs cp` | Different working directory or missing dependencies | Ensure all dependencies are also copied to the board |
 | `KeyboardInterrupt` on connect | Previous script still running | `Ctrl-C` to interrupt, then `Ctrl-D` to soft reset |

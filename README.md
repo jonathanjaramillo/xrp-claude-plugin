@@ -1,6 +1,6 @@
 # xrp-plugin
 
-A Claude Code plugin providing comprehensive MicroPython API reference and development skills for the [XRP (eXtensible Robotics Platform)](https://xrpusers.org) robot.
+A Claude Code plugin providing comprehensive MicroPython API reference and development skills for the [XRP (Experiential Robotics Platform)](https://www.sparkfun.com/xrp?gad_source=1&gad_campaignid=17479024030&gbraid=0AAAAADsj4ESH0KKojs75d137vPmB2ZffI&gclid=Cj0KCQjwm6POBhCrARIsAIG58CJ6OLNJTrKnpPsFleIBwupDI7JkY6HL8cuKdGB2rTA1JmQHfWsxskYaAlX_EALw_wcB) robot.
 
 ## Overview
 
